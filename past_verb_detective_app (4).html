@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Past Verb Detective 🕵️‍♂️</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+            min-height: 100vh;
+            color: #f8fafc;
+        }
+
+        .font-display {
+            font-family: 'Fredoka', cursive;
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .memory-card {
+            perspective: 1000px;
+            transition: transform 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
+        }
+        .memory-card.study-mode {
+            border-color: rgba(56, 189, 248, 0.6);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.25);
+        }
+
+        .grid-cell {
+            user-select: none;
+            touch-action: none;
+            transition: background-color 0.15s ease, transform 0.1s ease;
+        }
+
+        .grid-cell.selected {
+            background-color: #8b5cf6 !important;
+            color: #ffffff !important;
+            transform: scale(1.08);
+            box-shadow: 0 0 12px rgba(139, 92, 246, 0.6);
+        }
+
+        .grid-cell.found {
+            background-color: #10b981 !important;
+            color: #ffffff !important;
+            font-weight: bold;
+        }
+
+        .word-chip {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .word-chip:hover {
+            transform: translateY(-2px);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(139, 92, 246, 0.5);
+            border-radius: 4px;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        .pulse-animation {
+            animation: pulse-ring 2s infinite ease-in-out;
+        }
+
+        #printHeader {
+            display: none;
+        }
+
+        @media print {
+            body {
+                background: #ffffff !important;
+                color: #0f172a !important;
+                padding: 10px !important;
+            }
+            header, .tab-btn, button, #soundToggleBtn, #victoryModal, .no-print {
+                display: none !important;
+            }
+            #printHeader {
+                display: block !important;
+                margin-bottom: 20px;
+                border-bottom: 2px solid #0f172a;
+                padding-bottom: 10px;
+            }
+            .mission-view {
+                display: block !important;
+                page-break-after: always;
+                margin-bottom: 30px;
+            }
+            .glass-card {
+                background: #ffffff !important;
+                border: 1px solid #cbd5e1 !important;
+                color: #0f172a !important;
+                box-shadow: none !important;
+                backdrop-filter: none !important;
+            }
+            .grid-cell {
+                background: #ffffff !important;
+                color: #000000 !important;
+                border: 1px solid #94a3b8 !important;
+            }
+            .grid-cell.found {
+                background: #e2e8f0 !important;
+                color: #000000 !important;
+                font-weight: bold;
+            }
+            input[type="text"], select {
+                border: none !important;
+                border-bottom: 1.5px solid #000000 !important;
+                background: transparent !important;
+                color: #000000 !important;
+                border-radius: 0 !important;
+                appearance: none !important;
+            }
+            h1, h2, h3, p, span, div, label {
+                color: #0f172a !important;
+            }
+        }
+    </style>
+</head>
+<body class="p-2 md:p-6 min-h-screen flex flex-col justify-between">
+
+    <div class="max-w-6xl mx-auto w-full">
+        <!-- Print Header -->
+        <div id="printHeader" class="text-black">
+            <div class="flex justify-between items-center border-b-2 border-slate-900 pb-3 mb-4">
+                <div>
+                    <h1 class="text-2xl font-bold uppercase tracking-wide">STUDENT WORKSHEET</h1>
+                    <p class="text-sm font-semibold text-slate-700">Subject: English | Topic: Past Verbs (Regular & Irregular)</p>
+                </div>
+                <div class="text-right text-xs text-slate-600">
+                    <p>Past Verb Detective 🕵️‍♂️</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-4 text-sm font-medium border border-slate-300 p-3 rounded-lg mb-4 bg-slate-50">
+                <div><strong>Student Name / Group:</strong> .....................................</div>
+                <div><strong>Class:</strong> .........................</div>
+                <div><strong>Date:</strong> .........................</div>
+            </div>
+        </div>
+
+        <!-- Main Interactive Header -->
+        <header class="glass-card rounded-2xl p-4 md:p-6 mb-6 flex flex-col md:flex-row items-center justify-between gap-4 border-b border-indigo-500/20 shadow-xl">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center text-2xl shadow-lg shadow-indigo-500/30">
+                    🕵️‍♂️
+                </div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold font-display bg-clip-text text-transparent bg-gradient-to-r from-purple-300 via-pink-300 to-amber-200">
+                        Past Verb Detective: Mystery Case 🔍
+                    </h1>
+                    <p class="text-xs md:text-sm text-indigo-200/80">
+                        Interactive Learning Missions & Secret Codebreaker Vault
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 bg-slate-900/60 p-2 rounded-xl border border-indigo-500/20 flex-wrap justify-end">
+                <button onclick="exportToPDF()" class="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition-colors flex items-center gap-1.5 shadow-md" title="Print Worksheet as PDF">
+                    <span>📄</span>
+                    <span class="hidden sm:inline">Print PDF</span>
+                </button>
+                <div class="px-3 py-1.5 bg-indigo-950/80 rounded-lg text-center min-w-[70px]">
+                    <div class="text-[10px] text-indigo-300 uppercase font-bold tracking-wider font-display">Score</div>
+                    <div id="totalScoreDisplay" class="text-lg md:text-xl font-bold text-amber-300 font-display">0</div>
+                </div>
+                <div class="px-3 py-1.5 bg-indigo-950/80 rounded-lg text-center min-w-[70px]">
+                    <div class="text-[10px] text-indigo-300 uppercase font-bold tracking-wider">Missions</div>
+                    <div id="missionProgressDisplay" class="text-lg md:text-xl font-bold text-emerald-400 font-display">0/5</div>
+                </div>
+                <div class="px-3 py-1.5 bg-indigo-950/80 rounded-lg text-center min-w-[70px]">
+                    <div class="text-[10px] text-indigo-300 uppercase font-bold tracking-wider">Duration</div>
+                    <div id="timerDisplay" class="text-lg md:text-xl font-bold text-purple-300 font-display">00:00</div>
+                </div>
+                <button id="soundToggleBtn" onclick="toggleSound()" class="p-2.5 rounded-lg bg-indigo-900/50 hover:bg-indigo-800 text-indigo-200 transition-colors" title="Toggle Sound FX">
+                    🔊
+                </button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 md:gap-3 mb-6">
+            <button id="tab0" onclick="switchMission(0)" class="tab-btn glass-card p-3 rounded-xl flex flex-col items-center justify-center gap-1 border-2 border-cyan-500/80 bg-cyan-900/40 text-cyan-200 font-semibold transition-all">
+                <span class="text-lg">🧠</span>
+                <span class="text-xs text-center">Memory Sprint</span>
+            </button>
+            <button id="tab1" onclick="switchMission(1)" class="tab-btn glass-card p-3 rounded-xl flex flex-col items-center justify-center gap-1 border-2 border-transparent text-slate-400 font-semibold transition-all opacity-60">
+                <span class="text-lg">1️⃣</span>
+                <span class="text-xs text-center">Verb Converter</span>
+            </button>
+            <button id="tab2" onclick="switchMission(2)" class="tab-btn glass-card p-3 rounded-xl flex flex-col items-center justify-center gap-1 border-2 border-transparent text-slate-400 font-semibold transition-all opacity-60">
+                <span class="text-lg">2️⃣</span>
+                <span class="text-xs text-center">Word Search</span>
+            </button>
+            <button id="tab3" onclick="switchMission(3)" class="tab-btn glass-card p-3 rounded-xl flex flex-col items-center justify-center gap-1 border-2 border-transparent text-slate-400 font-semibold transition-all opacity-60">
+                <span class="text-lg">3️⃣</span>
+                <span class="text-xs text-center">Story Case</span>
+            </button>
+            <button id="tab4" onclick="switchMission(4)" class="tab-btn glass-card p-3 rounded-xl flex flex-col items-center justify-center gap-1 border-2 border-transparent text-slate-400 font-semibold transition-all opacity-60">
+                <span class="text-lg">🔓</span>
+                <span class="text-xs text-center font-bold text-amber-300">Codebreaker Vault</span>
+            </button>
+        </div>
+
+        <main id="mission0" class="mission-view space-y-6">
+            <div class="glass-card p-4 md:p-6 rounded-2xl">
+                <!-- Stage Selection Bar -->
+                <div class="mb-4 p-3 bg-slate-900/90 rounded-xl border border-cyan-500/30 flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-cyan-300 uppercase font-display tracking-wider">🎯 STAGE SELECTOR:</span>
+                        <div id="stageBtnGroup" class="flex items-center gap-1.5 flex-wrap">
+                            <button onclick="changeMemoryStage(0)" id="stageTab0" class="px-3 py-1 rounded-lg text-xs font-bold transition-all bg-cyan-600 text-white shadow-md">Stage 1</button>
+                            <button onclick="changeMemoryStage(1)" id="stageTab1" class="px-3 py-1 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white">Stage 2</button>
+                            <button onclick="changeMemoryStage(2)" id="stageTab2" class="px-3 py-1 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white">Stage 3</button>
+                            <button onclick="changeMemoryStage(3)" id="stageTab3" class="px-3 py-1 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white">Stage 4</button>
+                        </div>
+                    </div>
+                    <div id="currentStageTitleBadge" class="text-xs font-bold text-amber-300 font-display">
+                        Stage 1: School Mystery Case (10 Pairs)
+                    </div>
+                </div>
+
+                <!-- Phase Banner -->
+                <div id="studyPhaseBanner" class="p-4 mb-5 bg-gradient-to-r from-cyan-950/90 via-indigo-950/90 to-purple-950/90 border-2 border-cyan-400/60 rounded-2xl shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-cyan-500/20 border border-cyan-400 flex items-center justify-center text-2xl shrink-0 pulse-animation">
+                            👁️
+                        </div>
+                        <div>
+                            <h3 class="text-base md:text-lg font-bold text-cyan-200 font-display flex items-center gap-2">
+                                <span>PHASE 1: MEMORIZE VERB PAIRS (STUDY PHASE)</span>
+                            </h3>
+                            <p class="text-xs md:text-sm text-slate-300 mt-0.5">
+                                Study all Base Verbs (V1) and Past Verbs (V2) together before cards are shuffled!
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+                        <div id="studyTimerBadge" class="px-4 py-2 bg-cyan-900/80 border border-cyan-400/50 rounded-xl text-cyan-300 font-bold text-sm flex items-center gap-2 shadow-inner">
+                            <span>⏳ Shuffle in:</span>
+                            <span id="studyCountdown" class="text-amber-300 text-lg font-extrabold font-display">60s</span>
+                        </div>
+                        <button onclick="startMemoryGamePhase()" class="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold rounded-xl text-xs md:text-sm transition-all shadow-lg flex items-center gap-1.5 shrink-0">
+                            <span>🚀 Start Memory Match!</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-700/60">
+                    <div>
+                        <h2 class="text-xl font-bold font-display text-cyan-300 flex items-center gap-2">
+                            <span>🧠</span> Memory Sprint Match
+                        </h2>
+                        <p id="memoryInstructions" class="text-xs md:text-sm text-slate-300 mt-1">
+                            Observe and memorize V1 and V2 positions carefully!
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <button id="btnPeekCards" onclick="peekMemoryCards()" class="px-3 py-1.5 bg-cyan-700/50 hover:bg-cyan-600 text-cyan-200 rounded-lg text-xs font-bold transition-all shadow-md border border-cyan-500/30 hidden">
+                            👁️ Peek Cards (10s) [<span id="peeksLeftCount">3</span> Left]
+                        </button>
+                        <button onclick="shuffleAndRestartMemory()" class="px-3 py-1.5 bg-purple-700/80 hover:bg-purple-600 text-purple-100 rounded-lg text-xs font-bold transition-all border border-purple-500/40 shadow-md flex items-center gap-1">
+                            <span>🔀</span> Acak Kartu
+                        </button>
+                        <button onclick="restartStudyPhase()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold transition-all border border-slate-600">
+                            🔄 Study Again
+                        </button>
+                        <div class="px-3 py-1 bg-cyan-950 text-cyan-300 border border-cyan-500/40 rounded-full text-xs font-semibold">
+                            Matched Pairs: <span id="memoryPairProgress" class="text-amber-300 font-bold">0</span> / 10
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Memory Cards Grid -->
+                <div id="memoryGrid" class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-5 gap-3 max-w-3xl mx-auto my-4">
+                    <!-- Cards dynamically rendered -->
+                </div>
+            </div>
+        </main>
+
+        <main id="mission1" class="mission-view space-y-6 hidden">
+            <div class="glass-card p-4 md:p-6 rounded-2xl">
+                <div class="mb-4 pb-3 border-b border-slate-700/60 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold font-display text-purple-300 flex items-center gap-2">
+                            <span>1️⃣</span> Mission 1: Verb Converter
+                        </h2>
+                        <p class="text-xs md:text-sm text-slate-300 mt-1">
+                            Convert each Base Verb (V1) into its Past Form (V2).
+                        </p>
+                    </div>
+                    <button onclick="checkMission1()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs md:text-sm shadow-lg transition-all">
+                        Check Answers ✓
+                    </button>
+                </div>
+                <div id="mission1Container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Dynamic Verb inputs -->
+                </div>
+            </div>
+        </main>
+
+        <main id="mission2" class="mission-view space-y-6 hidden">
+            <div class="glass-card p-4 md:p-6 rounded-2xl">
+                <div class="mb-4 pb-3 border-b border-slate-700/60">
+                    <h2 class="text-xl font-bold font-display text-emerald-300 flex items-center gap-2">
+                        <span>2️⃣</span> Mission 2: Word Search Hunt
+                    </h2>
+                    <p class="text-xs md:text-sm text-slate-300 mt-1">
+                        Find all 10 V2 verbs hidden horizontally, vertically, diagonally, or in reverse!
+                    </p>
+                </div>
+                <div class="flex flex-col lg:flex-row gap-6 items-center lg:items-start justify-center">
+                    <div id="wordGrid" class="grid grid-cols-12 gap-1 sm:gap-1.5 p-3 bg-slate-900/90 rounded-2xl border-2 border-emerald-500/30 shadow-2xl overflow-x-auto">
+                        <!-- Grid cells dynamically generated -->
+                    </div>
+                    <div class="w-full lg:w-72 glass-card p-4 rounded-xl border border-emerald-500/30">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-3">Target V2 Verbs (<span id="wordsFoundCount">0</span>/10)</h3>
+                        <div id="targetWordList" class="grid grid-cols-2 gap-2">
+                            <!-- Target words pills -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <main id="mission3" class="mission-view space-y-6 hidden">
+            <div class="glass-card p-4 md:p-6 rounded-2xl">
+                <div class="mb-4 pb-3 border-b border-slate-700/60 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold font-display text-amber-300 flex items-center gap-2">
+                            <span>3️⃣</span> Mission 3: Detective Story Case
+                        </h2>
+                        <p class="text-xs md:text-sm text-slate-300 mt-1">
+                            Complete the story by choosing the correct V2 verbs!
+                        </p>
+                    </div>
+                    <button onclick="checkMission3()" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-xs md:text-sm shadow-lg transition-all">
+                        Submit Detective Report 🕵️‍♂️
+                    </button>
+                </div>
+
+                <div class="p-5 bg-slate-900/80 rounded-2xl border border-amber-500/30 text-sm md:text-base leading-relaxed text-slate-200">
+                    Yesterday, Detective Alex investigated a mystery at the school library. First, he 
+                    <select id="story_1" class="story-select mx-1 px-2 py-1 bg-slate-800 border border-amber-400/50 rounded-lg text-amber-300 font-bold"><option value="">-- select V2 --</option></select>
+                    the room carefully for clues. Suddenly, he 
+                    <select id="story_2" class="story-select mx-1 px-2 py-1 bg-slate-800 border border-amber-400/50 rounded-lg text-amber-300 font-bold"><option value="">-- select V2 --</option></select>
+                    a strange key under a desk. He 
+                    <select id="story_3" class="story-select mx-1 px-2 py-1 bg-slate-800 border border-amber-400/50 rounded-lg text-amber-300 font-bold"><option value="">-- select V2 --</option></select>
+                    the key and walked to the storage room. Someone had 
+                    <select id="story_4" class="story-select mx-1 px-2 py-1 bg-slate-800 border border-amber-400/50 rounded-lg text-amber-300 font-bold"><option value="">-- select V2 --</option></select>
+                    the door from outside! Alex 
+                    <select id="story_5" class="story-select mx-1 px-2 py-1 bg-slate-800 border border-amber-400/50 rounded-lg text-amber-300 font-bold"><option value="">-- select V2 --</option></select>
+                    closely and heard a quiet whisper. He quickly 
+                    <select id="story_6" class="story-select mx-1 px-2 py-1 bg-slate-800 border border-amber-400/50 rounded-lg text-amber-300 font-bold"><option value="">-- select V2 --</option></select>
+                    to get the principal. When they returned, they 
+                    <select id="story_7" class="story-select mx-1 px-2 py-1 bg-slate-800 border border-amber-400/50 rounded-lg text-amber-300 font-bold"><option value="">-- select V2 --</option></select>
+                    a missing cat behind the bookshelf! The cat 
+                    <select id="story_8" class="story-select mx-1 px-2 py-1 bg-slate-800 border border-amber-400/50 rounded-lg text-amber-300 font-bold"><option value="">-- select V2 --</option></select>
+                    a notebook while jumping. Inside, Alex 
+                    <select id="story_9" class="story-select mx-1 px-2 py-1 bg-slate-800 border border-amber-400/50 rounded-lg text-amber-300 font-bold"><option value="">-- select V2 --</option></select>
+                    the owner's name. In the end, he 
+                    <select id="story_10" class="story-select mx-1 px-2 py-1 bg-slate-800 border border-amber-400/50 rounded-lg text-amber-300 font-bold"><option value="">-- select V2 --</option></select>
+                    the case successfully!
+                </div>
+            </div>
+        </main>
+
+        <main id="mission4" class="mission-view space-y-6 hidden">
+            <div class="glass-card p-4 md:p-6 rounded-2xl">
+                <div class="mb-4 pb-3 border-b border-slate-700/60 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold font-display text-amber-300 flex items-center gap-2">
+                            <span>🔓</span> Mission 4: Sentence Architect & Cipher Vault
+                        </h2>
+                        <p class="text-xs md:text-sm text-slate-300 mt-1">
+                            Team Challenge: Unscramble past tense sentences & solve past verb ciphers to unlock the vault!
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Part A: Sentence Unscrambler -->
+                <div class="mb-6 p-4 bg-slate-900/80 rounded-2xl border border-indigo-500/30">
+                    <h3 class="text-sm font-bold text-indigo-300 uppercase tracking-wider mb-3 flex items-center gap-2 font-display">
+                        <span>🧩</span> Part A: Unscramble the Past Simple Sentences
+                    </h3>
+
+                    <div id="unscrambleContainer" class="space-y-4">
+                        <!-- Unscramble items dynamically populated -->
+                    </div>
+                    <div class="mt-4 text-right">
+                        <button onclick="checkUnscrambleSentences()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs md:text-sm shadow-lg transition-all">
+                            Verify Sentences ✓
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Part B: Secret Combination Vault Cipher -->
+                <div class="p-5 bg-gradient-to-r from-slate-900 via-purple-950 to-slate-900 rounded-2xl border-2 border-amber-400/40 shadow-2xl">
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center text-2xl font-bold shadow-lg shadow-amber-400/20 pulse-animation">
+                                🔐
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-amber-300 font-display">Part B: Detective Vault Combination Dial</h3>
+                                <p class="text-xs text-slate-300">Solve the 3 past verb riddle ciphers to unlock the secret case vault!</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 my-4">
+                        <div class="p-3 bg-slate-800/90 rounded-xl border border-amber-400/30">
+                            <span class="text-xs font-bold text-amber-300 uppercase">Riddle #1</span>
+                            <p class="text-xs text-slate-200 mt-1">Number of letters in the Past Form (V2) of <strong>"DISCOVER"</strong>?</p>
+                            <input type="number" id="cipher1" placeholder="Digit 1" class="w-full mt-2 px-3 py-1.5 bg-slate-950 border border-amber-400/50 rounded-lg text-center text-lg font-extrabold text-amber-300 focus:outline-none" />
+                        </div>
+                        <div class="p-3 bg-slate-800/90 rounded-xl border border-amber-400/30">
+                            <span class="text-xs font-bold text-amber-300 uppercase">Riddle #2</span>
+                            <p class="text-xs text-slate-200 mt-1">Number of vowels (a,e,i,o,u) in the Past Form (V2) of <strong>"SEARCH"</strong>?</p>
+                            <input type="number" id="cipher2" placeholder="Digit 2" class="w-full mt-2 px-3 py-1.5 bg-slate-950 border border-amber-400/50 rounded-lg text-center text-lg font-extrabold text-amber-300 focus:outline-none" />
+                        </div>
+                        <div class="p-3 bg-slate-800/90 rounded-xl border border-amber-400/30">
+                            <span class="text-xs font-bold text-amber-300 uppercase">Riddle #3</span>
+                            <p class="text-xs text-slate-200 mt-1">Past Form (V2) of <strong>"SEE"</strong> has how many total letters?</p>
+                            <input type="number" id="cipher3" placeholder="Digit 3" class="w-full mt-2 px-3 py-1.5 bg-slate-950 border border-amber-400/50 rounded-lg text-center text-lg font-extrabold text-amber-300 focus:outline-none" />
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <button onclick="unlockVault()" class="px-6 py-3 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-extrabold rounded-xl text-sm shadow-xl transition-all transform hover:scale-105 flex items-center gap-2 mx-auto">
+                            <span>🔓 UNLOCK SECRET VAULT</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- FINAL VICTORY MODAL -->
+    <div id="victoryModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+        <div class="glass-card max-w-md w-full rounded-3xl p-6 md:p-8 text-center border-2 border-emerald-400/60 shadow-2xl">
+            <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-tr from-emerald-400 to-teal-200 text-slate-950 flex items-center justify-center text-4xl shadow-xl shadow-emerald-400/30 pulse-animation">
+                🎓
+            </div>
+            <h2 class="text-2xl md:text-3xl font-extrabold font-display text-emerald-300">
+                ALL MISSIONS COMPLETED!
+            </h2>
+            <p class="text-xs md:text-sm text-slate-300 mt-2">
+                Congratulations! You are officially certified as a Master Past Verb Detective!
+            </p>
+
+            <div class="my-6 p-4 bg-slate-900/90 rounded-2xl border border-emerald-500/30 grid grid-cols-2 gap-3 text-center">
+                <div>
+                    <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Durasi Total</div>
+                    <div id="finalTime" class="text-xl md:text-2xl font-extrabold text-emerald-300 font-display">00:00</div>
+                </div>
+                <div>
+                    <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total Skor</div>
+                    <div id="finalScore" class="text-xl md:text-2xl font-extrabold text-amber-300 font-display">0</div>
+                </div>
+                <div class="col-span-2 pt-2 border-t border-slate-800">
+                    <div class="text-[10px] text-indigo-300 uppercase font-bold">Gelar Detektif (Rank)</div>
+                    <div id="finalRankBadge" class="text-base font-extrabold text-purple-300 font-display mt-0.5">🕵️‍♂️ Chief Inspector</div>
+                </div>
+            </div>
+
+            <div class="flex gap-3 justify-center">
+                <button onclick="closeModal()" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-xs transition-all border border-slate-600">
+                    Tutup
+                </button>
+                <button onclick="resetGame()" class="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-extrabold rounded-xl shadow-lg transition-all text-xs">
+                    Main Lagi 🔄
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const VERB_STAGES = [
+            {
+                stage: 1,
+                title: "Stage 1: School Mystery Case",
+                verbs: [
+                    { id: 1, v1: "Search", v2: "searched", type: "Regular" },
+                    { id: 2, v1: "Discover", v2: "discovered", type: "Regular" },
+                    { id: 3, v1: "Lock", v2: "locked", type: "Regular" },
+                    { id: 4, v1: "Solve", v2: "solved", type: "Regular" },
+                    { id: 5, v1: "Notice", v2: "noticed", type: "Regular" },
+                    { id: 6, v1: "See", v2: "saw", type: "Irregular" },
+                    { id: 7, v1: "Listen", v2: "listened", type: "Regular" },
+                    { id: 8, v1: "Run", v2: "ran", type: "Irregular" },
+                    { id: 9, v1: "Drop", v2: "dropped", type: "Regular" },
+                    { id: 10, v1: "Take", v2: "took", type: "Irregular" }
+                ]
+            },
+            {
+                stage: 2,
+                title: "Stage 2: Mystery Movements",
+                verbs: [
+                    { id: 11, v1: "Jump", v2: "jumped", type: "Regular" },
+                    { id: 12, v1: "Walk", v2: "walked", type: "Regular" },
+                    { id: 13, v1: "Fall", v2: "fell", type: "Irregular" },
+                    { id: 14, v1: "Push", v2: "pushed", type: "Regular" },
+                    { id: 15, v1: "Pull", v2: "pulled", type: "Regular" },
+                    { id: 16, v1: "Stand", v2: "stood", type: "Irregular" },
+                    { id: 17, v1: "Sit", v2: "sat", type: "Irregular" },
+                    { id: 18, v1: "Slide", v2: "slid", type: "Irregular" },
+                    { id: 19, v1: "Follow", v2: "followed", type: "Regular" },
+                    { id: 20, v1: "Escape", v2: "escaped", type: "Regular" }
+                ]
+            },
+            {
+                stage: 3,
+                title: "Stage 3: Detective Mind Games",
+                verbs: [
+                    { id: 21, v1: "Ask", v2: "asked", type: "Regular" },
+                    { id: 22, v1: "Answer", v2: "answered", type: "Regular" },
+                    { id: 23, v1: "Explain", v2: "explained", type: "Regular" },
+                    { id: 24, v1: "Remember", v2: "remembered", type: "Regular" },
+                    { id: 25, v1: "Read", v2: "read", type: "Irregular" },
+                    { id: 26, v1: "Say", v2: "said", type: "Irregular" },
+                    { id: 27, v1: "Tell", v2: "told", type: "Irregular" },
+                    { id: 28, v1: "Make", v2: "made", type: "Irregular" },
+                    { id: 29, v1: "Give", v2: "gave", type: "Irregular" },
+                    { id: 30, v1: "Send", v2: "sent", type: "Irregular" }
+                ]
+            },
+            {
+                stage: 4,
+                title: "Stage 4: Master Detective Final Race",
+                verbs: [
+                    { id: 31, v1: "Disappear", v2: "disappeared", type: "Regular" },
+                    { id: 32, v1: "Open", v2: "opened", type: "Regular" },
+                    { id: 33, v1: "Close", v2: "closed", type: "Regular" },
+                    { id: 34, v1: "Shout", v2: "shouted", type: "Regular" },
+                    { id: 35, v1: "Wear", v2: "wore", type: "Irregular" },
+                    { id: 36, v1: "Sing", v2: "sang", type: "Irregular" },
+                    { id: 37, v1: "Drink", v2: "drank", type: "Irregular" },
+                    { id: 38, v1: "Eat", v2: "ate", type: "Irregular" },
+                    { id: 39, v1: "Dream", v2: "dreamed", type: "Regular" },
+                    { id: 40, v1: "Meet", v2: "met", type: "Irregular" }
+                ]
+            }
+        ];
+
+        const VERB_DATA = VERB_STAGES[0].verbs;
+
+        const GRID_MATRIX = [
+            ['D', 'I', 'S', 'C', 'O', 'V', 'E', 'R', 'E', 'D', 'X', 'A'],
+            ['S', 'E', 'A', 'R', 'C', 'H', 'E', 'D', 'Z', 'Y', 'B', 'C'],
+            ['L', 'I', 'S', 'T', 'E', 'N', 'E', 'D', 'K', 'L', 'M', 'N'],
+            ['Q', 'N', 'O', 'T', 'I', 'C', 'E', 'D', 'P', 'R', 'S', 'T'],
+            ['U', 'V', 'W', 'L', 'O', 'C', 'K', 'E', 'D', 'X', 'Y', 'Z'],
+            ['A', 'B', 'C', 'D', 'S', 'O', 'L', 'V', 'E', 'D', 'E', 'F'],
+            ['G', 'H', 'I', 'D', 'R', 'O', 'P', 'P', 'E', 'D', 'J', 'K'],
+            ['T', 'O', 'O', 'K', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U'],
+            ['S', 'A', 'W', 'V', 'W', 'X', 'Y', 'Z', 'A', 'B', 'C', 'D'],
+            ['R', 'A', 'N', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'],
+            ['P', 'A', 'S', 'T', 'V', 'E', 'R', 'B', 'D', 'E', 'T', 'E'],
+            ['C', 'T', 'I', 'V', 'E', 'G', 'A', 'M', 'E', 'W', 'I', 'N']
+        ];
+
+        const STORY_SOLUTIONS = {
+            story_1: "searched",
+            story_2: "noticed",
+            story_3: "took",
+            story_4: "locked",
+            story_5: "listened",
+            story_6: "ran",
+            story_7: "saw",
+            story_8: "dropped",
+            story_9: "discovered",
+            story_10: "solved"
+        };
+
+        const UNSCRAMBLE_DATA = [
+            { id: 1, target: "The detective searched the quiet room yesterday.", words: ["The detective", "searched", "the quiet room", "yesterday."] },
+            { id: 2, target: "They discovered a secret clue under the table.", words: ["They", "discovered", "a secret clue", "under the table."] },
+            { id: 3, target: "Alex solved the library mystery quickly.", words: ["Alex", "solved", "the library mystery", "quickly."] }
+        ];
+
+        let gameState = {
+            currentMission: 0,
+            currentMemoryStage: 0,
+            score: 0,
+            timerSeconds: 0,
+            timerInterval: null,
+            soundEnabled: true,
+            m0Completed: false,
+            m1Completed: false,
+            m2Completed: false,
+            m3Completed: false,
+            m4Completed: false,
+            foundWords: new Set(),
+            unscrambleState: {}
+        };
+
+        let memoryCards = [];
+        let flippedMemoryCards = [];
+        let matchedMemoryPairs = 0;
+        let isStudyPhase = true;
+        let isMemoryLock = true;
+        let studyCountdownSeconds = 60;
+        let studyTimerInterval = null;
+        let peeksRemaining = 3;
+
+        let isSelecting = false;
+        let selectedCells = [];
+
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        const AudioFX = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+            },
+            playPop() {
+                if (!gameState.soundEnabled) return;
+                this.init();
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(450, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.08);
+            },
+            playSuccess() {
+                if (!gameState.soundEnabled) return;
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                [523.25, 659.25, 783.99].forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                    gain.gain.setValueAtTime(0.2, now + idx * 0.08);
+                    gain.gain.linearRampToValueAtTime(0.01, now + idx * 0.08 + 0.2);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.08);
+                    osc.stop(now + idx * 0.08 + 0.2);
+                });
+            },
+            playFanfare() {
+                if (!gameState.soundEnabled) return;
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+                    gain.gain.setValueAtTime(0.25, now + idx * 0.12);
+                    gain.gain.linearRampToValueAtTime(0.01, now + idx * 0.12 + 0.3);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.12);
+                    osc.stop(now + idx * 0.12 + 0.3);
+                });
+            }
+        };
+
+        function toggleSound() {
+            gameState.soundEnabled = !gameState.soundEnabled;
+            const btn = document.getElementById('soundToggleBtn');
+            btn.textContent = gameState.soundEnabled ? '🔊' : '🔇';
+            alertMessage(gameState.soundEnabled ? 'Sound FX Enabled' : 'Sound FX Muted');
+        }
+
+        function initTimer() {
+            if (gameState.timerInterval) clearInterval(gameState.timerInterval);
+            gameState.timerSeconds = 0;
+            gameState.timerInterval = setInterval(() => {
+                gameState.timerSeconds++;
+                const mins = String(Math.floor(gameState.timerSeconds / 60)).padStart(2, '0');
+                const secs = String(gameState.timerSeconds % 60).padStart(2, '0');
+                const timerDisplay = document.getElementById('timerDisplay');
+                if (timerDisplay) timerDisplay.textContent = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function updateScore(pts) {
+            gameState.score += pts;
+            document.getElementById('totalScoreDisplay').textContent = gameState.score;
+        }
+
+        function changeMemoryStage(stageIndex) {
+            if (stageIndex < 0 || stageIndex >= VERB_STAGES.length) return;
+            gameState.currentMemoryStage = stageIndex;
+
+            for (let i = 0; i < 4; i++) {
+                const btn = document.getElementById(`stageTab${i}`);
+                if (btn) {
+                    if (i === stageIndex) {
+                        btn.className = "px-3 py-1 rounded-lg text-xs font-bold transition-all bg-cyan-600 text-white shadow-md";
+                    } else {
+                        btn.className = "px-3 py-1 rounded-lg text-xs font-bold transition-all bg-slate-800 text-slate-400 hover:text-white";
+                    }
+                }
+            }
+
+            const currentStageObj = VERB_STAGES[stageIndex];
+            document.getElementById('currentStageTitleBadge').textContent = `${currentStageObj.title} (10 Pairs)`;
+
+            initStudyPhase();
+            alertMessage(`🎮 Switched to ${currentStageObj.title}! Kartu telah diacak.`);
+        }
+
+        function initStudyPhase() {
+            isStudyPhase = true;
+            isMemoryLock = true;
+            flippedMemoryCards = [];
+            matchedMemoryPairs = 0;
+            peeksRemaining = 3;
+            document.getElementById('memoryPairProgress').textContent = '0';
+            document.getElementById('btnPeekCards').classList.add('hidden');
+            document.getElementById('peeksLeftCount').textContent = peeksRemaining;
+
+            const banner = document.getElementById('studyPhaseBanner');
+            banner.classList.remove('hidden');
+            document.getElementById('memoryInstructions').textContent = "Observe and memorize V1 and V2 positions carefully!";
+
+            const activeVerbs = VERB_STAGES[gameState.currentMemoryStage].verbs;
+            let cardDeck = [];
+            activeVerbs.forEach(v => {
+                cardDeck.push({ id: v.id, text: v.v1, type: 'v1', pairId: v.id });
+                cardDeck.push({ id: v.id, text: v.v2, type: 'v2', pairId: v.id });
+            });
+
+            memoryCards = shuffleArray(cardDeck);
+
+            const memoryGrid = document.getElementById('memoryGrid');
+            memoryGrid.innerHTML = '';
+
+            memoryCards.forEach((card, index) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = "memory-card study-mode h-20 md:h-24 bg-slate-800 border-2 border-cyan-400/80 rounded-xl flex flex-col items-center justify-center p-1 cursor-default font-bold text-sm md:text-base text-cyan-200 shadow-lg select-none";
+                cardEl.dataset.index = index;
+
+                const badgeColor = card.type === 'v1' ? 'bg-cyan-500/30 text-cyan-300 border-cyan-400/40' : 'bg-amber-500/30 text-amber-300 border-amber-400/40';
+                const tagLabel = card.type === 'v1' ? 'V1 Base' : 'V2 Past';
+
+                cardEl.innerHTML = `
+                    <span class="text-[9px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded-md border ${badgeColor} mb-1">${tagLabel}</span>
+                    <span class="card-text uppercase font-bold text-amber-200 tracking-wide text-xs md:text-sm text-center">${card.text}</span>
+                    <span class="card-back hidden text-2xl">❓</span>
+                `;
+                memoryGrid.appendChild(cardEl);
+            });
+
+            studyCountdownSeconds = 60;
+            document.getElementById('studyCountdown').textContent = `${studyCountdownSeconds}s`;
+
+            if (studyTimerInterval) clearInterval(studyTimerInterval);
+            studyTimerInterval = setInterval(() => {
+                studyCountdownSeconds--;
+                if (studyCountdownSeconds >= 0) {
+                    document.getElementById('studyCountdown').textContent = `${studyCountdownSeconds}s`;
+                }
+                if (studyCountdownSeconds <= 0) {
+                    clearInterval(studyTimerInterval);
+                    startMemoryGamePhase();
+                }
+            }, 1000);
+        }
+
+        function shuffleAndRestartMemory() {
+            initStudyPhase();
+            alertMessage("🔀 Kartu Memory Sprint berhasil diacak ulang!");
+        }
+
+        function restartStudyPhase() {
+            initStudyPhase();
+        }
+
+        function startMemoryGamePhase() {
+            if (studyTimerInterval) clearInterval(studyTimerInterval);
+            isStudyPhase = false;
+            isMemoryLock = false;
+
+            const banner = document.getElementById('studyPhaseBanner');
+            banner.classList.add('hidden');
+            document.getElementById('btnPeekCards').classList.remove('hidden');
+            document.getElementById('memoryInstructions').textContent = "Select 2 cards to match Base Verb (V1) with Past Form (V2)!";
+
+            AudioFX.playPop();
+
+            const memoryGrid = document.getElementById('memoryGrid');
+            memoryGrid.innerHTML = '';
+
+            memoryCards.forEach((card, index) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = "memory-card h-20 md:h-24 bg-slate-800/90 border-2 border-cyan-500/30 rounded-xl flex items-center justify-center cursor-pointer font-bold text-sm md:text-base text-cyan-200 transition-all transform hover:scale-105 shadow-md select-none";
+                cardEl.dataset.index = index;
+                
+                cardEl.innerHTML = `
+                    <span class="card-text hidden uppercase tracking-wider font-bold text-amber-200 text-xs md:text-sm text-center">${card.text}</span>
+                    <span class="card-back text-2xl text-cyan-400">❓</span>
+                `;
+                
+                cardEl.addEventListener('click', () => flipMemoryCard(index, cardEl));
+                memoryGrid.appendChild(cardEl);
+            });
+        }
+
+        function flipMemoryCard(index, cardEl) {
+            if (isStudyPhase || isMemoryLock || flippedMemoryCards.length >= 2) return;
+            if (cardEl.classList.contains('matched') || cardEl.classList.contains('flipped')) return;
+
+            cardEl.classList.add('flipped', 'bg-cyan-900/90', 'border-cyan-400', 'shadow-cyan-500/20');
+            cardEl.querySelector('.card-text').classList.remove('hidden');
+            cardEl.querySelector('.card-back').classList.add('hidden');
+            AudioFX.playPop();
+
+            flippedMemoryCards.push({ index, card: memoryCards[index], elem: cardEl });
+
+            if (flippedMemoryCards.length === 2) {
+                checkMemoryMatch();
+            }
+        }
+
+        function checkMemoryMatch() {
+            isMemoryLock = true;
+            const [c1, c2] = flippedMemoryCards;
+
+            if (c1.card.pairId === c2.card.pairId && c1.card.type !== c2.card.type) {
+                setTimeout(() => {
+                    c1.elem.classList.add('matched', 'bg-emerald-900/70', 'border-emerald-400', 'opacity-85');
+                    c2.elem.classList.add('matched', 'bg-emerald-900/70', 'border-emerald-400', 'opacity-85');
+                    AudioFX.playSuccess();
+
+                    matchedMemoryPairs++;
+                    updateScore(50);
+
+                    document.getElementById('memoryPairProgress').textContent = matchedMemoryPairs;
+
+                    if (matchedMemoryPairs === 10) {
+                        gameState.m0Completed = true;
+                        AudioFX.playFanfare();
+                        alertMessage("🎉 Memory Sprint Complete! +100 bonus points!");
+                        updateScore(100);
+                        updateMissionProgress();
+                        checkAllMissionsFinished();
+                    }
+
+                    flippedMemoryCards = [];
+                    isMemoryLock = false;
+                }, 350);
+            } else {
+                setTimeout(() => {
+                    c1.elem.classList.remove('flipped', 'bg-cyan-900/90', 'border-cyan-400', 'shadow-cyan-500/20');
+                    c2.elem.classList.remove('flipped', 'bg-cyan-900/90', 'border-cyan-400', 'shadow-cyan-500/20');
+                    c1.elem.querySelector('.card-text').classList.add('hidden');
+                    c1.elem.querySelector('.card-back').classList.remove('hidden');
+                    c2.elem.querySelector('.card-text').classList.add('hidden');
+                    c2.elem.querySelector('.card-back').classList.remove('hidden');
+
+                    flippedMemoryCards = [];
+                    isMemoryLock = false;
+                }, 850);
+            }
+        }
+
+        function peekMemoryCards() {
+            if (isStudyPhase || isMemoryLock || peeksRemaining <= 0) return;
+            
+            peeksRemaining--;
+            document.getElementById('peeksLeftCount').textContent = peeksRemaining;
+            
+            const btn = document.getElementById('btnPeekCards');
+            if (peeksRemaining <= 0) {
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+
+            isMemoryLock = true;
+            const cardElems = document.querySelectorAll('.memory-card:not(.matched)');
+            cardElems.forEach(el => {
+                el.querySelector('.card-text').classList.remove('hidden');
+                el.querySelector('.card-back').classList.add('hidden');
+                el.classList.add('bg-cyan-950', 'border-cyan-300');
+            });
+
+            alertMessage(`👁️ Peek active! You have 10 seconds to observe cards.`);
+
+            setTimeout(() => {
+                cardElems.forEach(el => {
+                    if (!el.classList.contains('flipped')) {
+                        el.querySelector('.card-text').classList.add('hidden');
+                        el.querySelector('.card-back').classList.remove('hidden');
+                        el.classList.remove('bg-cyan-950', 'border-cyan-300');
+                    }
+                });
+                isMemoryLock = false;
+            }, 10000);
+        }
+
+        function renderMission1() {
+            const container = document.getElementById('mission1Container');
+            container.innerHTML = '';
+
+            VERB_DATA.forEach(v => {
+                const card = document.createElement('div');
+                card.className = "p-4 bg-slate-900/60 rounded-xl border border-purple-500/20 flex flex-col justify-between gap-3";
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold uppercase tracking-wider text-purple-300">Verb #${v.id}</span>
+                        <span id="m1_status_${v.id}" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">Pending</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-1/3 text-base font-bold text-amber-300">${v.v1} <span class="text-xs text-slate-400 font-normal">(V1)</span></div>
+                        <input type="text" id="m1_input_${v.id}" placeholder="Type V2..." class="w-2/3 px-3 py-1.5 bg-slate-800 border border-indigo-500/30 rounded-lg text-sm text-white font-medium focus:outline-none focus:ring-2 focus:ring-purple-400" />
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function checkMission1() {
+            let correctCount = 0;
+            VERB_DATA.forEach(v => {
+                const input = document.getElementById(`m1_input_${v.id}`);
+                const status = document.getElementById(`m1_status_${v.id}`);
+                const userVal = input.value.trim().toLowerCase();
+
+                if (userVal === v.v2.toLowerCase()) {
+                    correctCount++;
+                    status.textContent = "Correct ✓";
+                    status.className = "text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-900/80 text-emerald-300";
+                    input.className = "w-2/3 px-3 py-1.5 bg-emerald-950/60 border border-emerald-500/50 rounded-lg text-sm text-emerald-200 font-bold focus:outline-none";
+                } else {
+                    status.textContent = "Incorrect ✗";
+                    status.className = "text-xs font-semibold px-2 py-0.5 rounded-full bg-rose-900/80 text-rose-300";
+                    input.className = "w-2/3 px-3 py-1.5 bg-rose-950/60 border border-rose-500/50 rounded-lg text-sm text-rose-200 font-bold focus:outline-none";
+                }
+            });
+
+            if (correctCount === VERB_DATA.length) {
+                if (!gameState.m1Completed) {
+                    gameState.m1Completed = true;
+                    updateScore(150);
+                    AudioFX.playSuccess();
+                    alertMessage("Great job! All V1 to V2 conversions are correct!");
+                    updateMissionProgress();
+                    checkAllMissionsFinished();
+                }
+            } else {
+                alertMessage(`You got ${correctCount}/${VERB_DATA.length} correct. Check your answers!`);
+            }
+        }
+
+        function renderMission2Grid() {
+            const gridEl = document.getElementById('wordGrid');
+            gridEl.innerHTML = '';
+
+            for (let r = 0; r < 12; r++) {
+                for (let c = 0; c < 12; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = "grid-cell w-7 h-7 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-slate-800/80 rounded-lg flex items-center justify-center font-bold text-xs sm:text-sm md:text-base text-slate-200 cursor-pointer shadow-inner border border-slate-700/50";
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    cell.dataset.char = GRID_MATRIX[r][c];
+                    cell.textContent = GRID_MATRIX[r][c];
+
+                    cell.addEventListener('mousedown', () => startGridSelection(r, c, cell));
+                    cell.addEventListener('mouseenter', () => updateGridSelection(r, c, cell));
+                    cell.addEventListener('mouseup', endGridSelection);
+
+                    cell.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        startGridSelection(r, c, cell);
+                    });
+                    cell.addEventListener('touchmove', (e) => {
+                        e.preventDefault();
+                        const touch = e.touches[0];
+                        const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                        if (target && target.classList.contains('grid-cell')) {
+                            const tr = parseInt(target.dataset.row);
+                            const tc = parseInt(target.dataset.col);
+                            updateGridSelection(tr, tc, target);
+                        }
+                    });
+                    cell.addEventListener('touchend', endGridSelection);
+
+                    gridEl.appendChild(cell);
+                }
+            }
+
+            document.addEventListener('mouseup', endGridSelection);
+        }
+
+        function startGridSelection(r, c, cell) {
+            isSelecting = true;
+            selectedCells = [{ r, c, elem: cell }];
+            cell.classList.add('selected');
+            AudioFX.playPop();
+        }
+
+        function updateGridSelection(r, c, cell) {
+            if (!isSelecting) return;
+            const alreadySelected = selectedCells.some(item => item.r === r && item.c === c);
+            if (!alreadySelected) {
+                selectedCells.push({ r, c, elem: cell });
+                cell.classList.add('selected');
+                AudioFX.playPop();
+            }
+        }
+
+        function endGridSelection() {
+            if (!isSelecting) return;
+            isSelecting = false;
+
+            const word = selectedCells.map(c => c.elem.dataset.char).join('').toLowerCase();
+            const revWord = word.split('').reverse().join('');
+
+            const matchedVerb = VERB_DATA.find(v => (v.v2.toLowerCase() === word || v.v2.toLowerCase() === revWord) && !gameState.foundWords.has(v.v2.toLowerCase()));
+
+            if (matchedVerb) {
+                const targetWord = matchedVerb.v2.toLowerCase();
+                gameState.foundWords.add(targetWord);
+                selectedCells.forEach(item => {
+                    item.elem.classList.remove('selected');
+                    item.elem.classList.add('found');
+                });
+
+                AudioFX.playSuccess();
+                updateScore(30);
+                updateTargetWordPill(targetWord);
+
+                document.getElementById('wordsFoundCount').textContent = gameState.foundWords.size;
+
+                if (gameState.foundWords.size === 10) {
+                    gameState.m2Completed = true;
+                    updateScore(150);
+                    AudioFX.playFanfare();
+                    alertMessage("Awesome! You found all 10 V2 verbs in the grid!");
+                    updateMissionProgress();
+                    checkAllMissionsFinished();
+                }
+            } else {
+                selectedCells.forEach(item => item.elem.classList.remove('selected'));
+            }
+
+            selectedCells = [];
+        }
+
+        function renderMission2TargetList() {
+            const listEl = document.getElementById('targetWordList');
+            listEl.innerHTML = '';
+
+            VERB_DATA.forEach(v => {
+                const pill = document.createElement('div');
+                pill.id = `target_pill_${v.v2.toLowerCase()}`;
+                pill.className = "px-3 py-2 bg-slate-900 border border-indigo-500/20 rounded-xl text-center text-xs md:text-sm font-bold text-indigo-300 uppercase tracking-wider transition-all";
+                pill.textContent = v.v2;
+                listEl.appendChild(pill);
+            });
+        }
+
+        function updateTargetWordPill(word) {
+            const pill = document.getElementById(`target_pill_${word}`);
+            if (pill) {
+                pill.className = "px-3 py-2 bg-emerald-900/80 border border-emerald-400 rounded-xl text-center text-xs md:text-sm font-bold text-white uppercase tracking-wider shadow-lg line-through opacity-80";
+            }
+        }
+
+        function populateStoryDropdowns() {
+            const selects = document.querySelectorAll('.story-select');
+            const options = VERB_DATA.map(v => v.v2).sort();
+
+            selects.forEach(select => {
+                options.forEach(v2 => {
+                    const opt = document.createElement('option');
+                    opt.value = v2.toLowerCase();
+                    opt.textContent = v2;
+                    select.appendChild(opt);
+                });
+            });
+        }
+
+        function checkMission3() {
+            let correct = 0;
+            const total = Object.keys(STORY_SOLUTIONS).length;
+
+            Object.entries(STORY_SOLUTIONS).forEach(([key, answer]) => {
+                const select = document.getElementById(key);
+                if (select.value.toLowerCase() === answer.toLowerCase()) {
+                    correct++;
+                    select.className = "story-select mx-1 px-3 py-1 bg-emerald-900 border-2 border-emerald-400 rounded-lg text-emerald-200 font-bold focus:outline-none";
+                } else {
+                    select.className = "story-select mx-1 px-3 py-1 bg-rose-900 border-2 border-rose-400 rounded-lg text-rose-200 font-bold focus:outline-none";
+                }
+            });
+
+            if (correct === total) {
+                if (!gameState.m3Completed) {
+                    gameState.m3Completed = true;
+                    updateScore(200);
+                    AudioFX.playFanfare();
+                    alertMessage("Story Case Solved! Excellent job!");
+                    updateMissionProgress();
+                    checkAllMissionsFinished();
+                }
+            } else {
+                alertMessage(`You completed ${correct}/${total} story blanks correctly. Try again!`);
+            }
+        }
+
+        function renderMission4Unscramble() {
+            const container = document.getElementById('unscrambleContainer');
+            container.innerHTML = '';
+
+            UNSCRAMBLE_DATA.forEach(item => {
+                gameState.unscrambleState[item.id] = [];
+                const shuffledWords = shuffleArray(item.words);
+
+                const card = document.createElement('div');
+                card.className = "p-4 bg-slate-950/80 rounded-xl border border-indigo-500/30";
+                card.innerHTML = `
+                    <div class="text-xs font-bold text-indigo-300 uppercase mb-2">Sentence #${item.id}</div>
+                    
+                    <div class="flex flex-wrap gap-2 mb-3 min-h-[40px] p-2 bg-slate-900 rounded-lg border border-slate-700" id="unscramble_drop_${item.id}">
+                        <span class="text-xs text-slate-500 italic self-center px-1">Tap words below to arrange sentence...</span>
+                    </div>
+
+                    <div class="flex flex-wrap gap-2" id="unscramble_pool_${item.id}">
+                        ${shuffledWords.map((word, wIdx) => `
+                            <button onclick="pickUnscrambleWord(${item.id}, '${word.replace(/'/g, "\\'")}', this)" class="word-chip px-3 py-1.5 bg-indigo-900/80 hover:bg-indigo-800 text-indigo-200 rounded-lg text-xs md:text-sm font-semibold border border-indigo-500/40 shadow">
+                                ${word}
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function pickUnscrambleWord(sentId, word, btnElem) {
+            btnElem.disabled = true;
+            btnElem.classList.add('opacity-40', 'cursor-not-allowed');
+
+            const dropZone = document.getElementById(`unscramble_drop_${sentId}`);
+            const placeholder = dropZone.querySelector('span');
+            if (placeholder) placeholder.remove();
+
+            gameState.unscrambleState[sentId].push(word);
+
+            const wordTag = document.createElement('span');
+            wordTag.className = "px-3 py-1 bg-amber-500/20 border border-amber-400 text-amber-300 rounded-lg text-xs md:text-sm font-bold flex items-center gap-1 cursor-pointer";
+            wordTag.innerHTML = `<span>${word}</span> <span class="text-xs text-rose-400 font-extrabold">✕</span>`;
+            wordTag.onclick = () => {
+                wordTag.remove();
+                btnElem.disabled = false;
+                btnElem.classList.remove('opacity-40', 'cursor-not-allowed');
+                gameState.unscrambleState[sentId] = gameState.unscrambleState[sentId].filter(w => w !== word);
+
+                if (dropZone.children.length === 0) {
+                    dropZone.innerHTML = '<span class="text-xs text-slate-500 italic self-center px-1">Tap words below to arrange sentence...</span>';
+                }
+            };
+
+            dropZone.appendChild(wordTag);
+            AudioFX.playPop();
+        }
+
+        function checkUnscrambleSentences() {
+            let correctCount = 0;
+
+            UNSCRAMBLE_DATA.forEach(item => {
+                const userSent = (gameState.unscrambleState[item.id] || []).join(' ').trim();
+                const dropZone = document.getElementById(`unscramble_drop_${item.id}`);
+
+                if (userSent === item.target) {
+                    correctCount++;
+                    dropZone.className = "flex flex-wrap gap-2 mb-3 min-h-[40px] p-2 bg-emerald-950/80 rounded-lg border-2 border-emerald-400";
+                } else {
+                    dropZone.className = "flex flex-wrap gap-2 mb-3 min-h-[40px] p-2 bg-rose-950/80 rounded-lg border-2 border-rose-400";
+                }
+            });
+
+            if (correctCount === UNSCRAMBLE_DATA.length) {
+                AudioFX.playSuccess();
+                alertMessage("All 3 sentences unscrambled correctly! Now solve the Vault Cipher!");
+            } else {
+                alertMessage(`You got ${correctCount}/${UNSCRAMBLE_DATA.length} sentences correct. Try again!`);
+            }
+        }
+
+        function unlockVault() {
+            const d1 = document.getElementById('cipher1').value.trim();
+            const d2 = document.getElementById('cipher2').value.trim();
+            const d3 = document.getElementById('cipher3').value.trim();
+
+            // V2 of DISCOVER = "discovered" (10 letters) -> last digit 0
+            // V2 of SEARCH = "searched" -> vowels e, a, e (3 vowels)
+            // V2 of SEE = "saw" (3 letters)
+            const isCorrect = (d1 === "10" || d1 === "0") && d2 === "3" && d3 === "3";
+
+            if (isCorrect) {
+                if (!gameState.m4Completed) {
+                    gameState.m4Completed = true;
+                    updateScore(250);
+                    AudioFX.playFanfare();
+                    updateMissionProgress();
+                    triggerVictory();
+                }
+            } else {
+                alertMessage("🔒 Vault Dial Combination Incorrect! Re-check your Past Verb riddle answers.");
+            }
+        }
+
+        function switchMission(num) {
+            gameState.currentMission = num;
+
+            document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
+                if (idx === num) {
+                    btn.className = "tab-btn glass-card p-3 rounded-xl flex flex-col items-center justify-center gap-1 border-2 border-purple-500/80 bg-purple-900/40 text-purple-200 font-semibold transition-all";
+                } else {
+                    btn.className = "tab-btn glass-card p-3 rounded-xl flex flex-col items-center justify-center gap-1 border-2 border-transparent text-slate-400 font-semibold transition-all opacity-60 hover:opacity-100";
+                }
+            });
+
+            document.querySelectorAll('.mission-view').forEach((view, idx) => {
+                if (idx === num) view.classList.remove('hidden');
+                else view.classList.add('hidden');
+            });
+        }
+
+        function updateMissionProgress() {
+            let count = (gameState.m0Completed ? 1 : 0) + (gameState.m1Completed ? 1 : 0) + (gameState.m2Completed ? 1 : 0) + (gameState.m3Completed ? 1 : 0) + (gameState.m4Completed ? 1 : 0);
+            document.getElementById('missionProgressDisplay').textContent = `${count}/5`;
+        }
+
+        function checkAllMissionsFinished() {
+            let count = (gameState.m0Completed ? 1 : 0) + (gameState.m1Completed ? 1 : 0) + (gameState.m2Completed ? 1 : 0) + (gameState.m3Completed ? 1 : 0) + (gameState.m4Completed ? 1 : 0);
+            if (count === 5) {
+                triggerVictory();
+            }
+        }
+
+        function triggerVictory() {
+            clearInterval(gameState.timerInterval);
+            AudioFX.playFanfare();
+
+            const finalTimeText = document.getElementById('timerDisplay').textContent;
+            document.getElementById('finalTime').textContent = finalTimeText;
+            document.getElementById('finalScore').textContent = gameState.score;
+
+            // Rank Badge logic
+            let rank = "🕵️‍♂️ Master Detective";
+            if (gameState.score >= 800) rank = "🏆 Chief Inspector Detective";
+            else if (gameState.score >= 500) rank = "🔍 Senior Investigator";
+            else rank = "📜 Junior Detective";
+
+            document.getElementById('finalRankBadge').textContent = rank;
+            document.getElementById('victoryModal').classList.remove('hidden');
+
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 150,
+                    spread: 90,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('victoryModal').classList.add('hidden');
+        }
+
+        function alertMessage(msg) {
+            const toast = document.createElement('div');
+            toast.className = "fixed bottom-5 right-5 bg-purple-900 border border-purple-400 text-purple-100 px-5 py-3 rounded-xl shadow-2xl z-50 text-sm font-semibold flex items-center gap-2 animate-bounce";
+            toast.innerHTML = `<span>🕵️‍♂️</span><span>${msg}</span>`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
+
+        function resetGame() {
+            location.reload();
+        }
+
+        function exportToPDF() {
+            window.print();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initTimer();
+            initStudyPhase();
+            renderMission1();
+            renderMission2Grid();
+            renderMission2TargetList();
+            populateStoryDropdowns();
+            renderMission4Unscramble();
+        });
+    </script>
+</body>
+</html>
